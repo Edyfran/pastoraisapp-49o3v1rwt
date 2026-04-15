@@ -28,8 +28,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
 export default function PastoralDetail() {
   const { id } = useParams()
-  const store = useDataStore() as any
-  const { pastorais, membros } = store
+  const store = useDataStore()
+  const { pastorais, membros, refresh } = store
   const { toast } = useToast()
 
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false)
@@ -54,11 +54,15 @@ export default function PastoralDetail() {
         pastoral_id: id,
       })
 
-      if (error) {
-        // Ignora erro de unicidade se já existir
-        if (error.code !== '23505') {
-          console.error('Supabase error:', error)
-        }
+      if (error && error.code !== '23505') {
+        console.error('Supabase error:', error)
+        toast({
+          title: 'Erro',
+          description: 'Não foi possível adicionar o membro à pastoral.',
+          variant: 'destructive',
+        })
+        setIsLoading(false)
+        return
       }
 
       toast({
@@ -66,11 +70,8 @@ export default function PastoralDetail() {
         description: 'Membro adicionado à pastoral com sucesso!',
       })
 
-      // Tenta atualizar o estado local se a store suportar
-      if (typeof store.addMembroToPastoral === 'function') {
-        store.addMembroToPastoral(selectedMemberId, id)
-      } else if (typeof store.fetchData === 'function') {
-        store.fetchData()
+      if (typeof refresh === 'function') {
+        await refresh()
       }
 
       setIsAddMemberOpen(false)
