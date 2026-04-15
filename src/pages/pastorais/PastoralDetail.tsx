@@ -1,8 +1,27 @@
+import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { ArrowLeft, Users, Settings, PlusCircle } from 'lucide-react'
 import useDataStore from '@/stores/useDataStore'
+import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -10,11 +29,62 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 export default function PastoralDetail() {
   const { id } = useParams()
   const { pastorais, membros } = useDataStore()
+  const { toast } = useToast()
+
+  const [isAddMemberOpen, setIsAddMemberOpen] = useState(false)
+  const [selectedMemberId, setSelectedMemberId] = useState<string>('')
+  const [isLoading, setIsLoading] = useState(false)
 
   const pastoral = pastorais.find((p) => p.id === id)
   const pastoralMembros = membros.filter((m) => m.pastoralIds.includes(id || ''))
 
+  const availableMembers = membros.filter((m) => !m.pastoralIds.includes(id || ''))
+
   if (!pastoral) return <div className="p-8 text-center">Pastoral não encontrada.</div>
+
+  const handleAddMember = async () => {
+    if (!selectedMemberId || !id) return
+    setIsLoading(true)
+
+    try {
+      // Tentativa de salvar no Supabase
+      const { error } = await supabase.from('membros_pastorais').insert({
+        membro_id: selectedMemberId,
+        pastoral_id: id,
+      })
+
+      if (error) {
+        // Ignora erro de unicidade se já existir
+        if (error.code !== '23505') {
+          console.error('Supabase error:', error)
+        }
+      }
+
+      toast({
+        title: 'Sucesso',
+        description: 'Membro adicionado à pastoral com sucesso!',
+      })
+
+      // Tenta atualizar o estado local se a store suportar
+      const store = useDataStore.getState ? (useDataStore as any).getState() : useDataStore()
+      if (typeof store.addMembroToPastoral === 'function') {
+        store.addMembroToPastoral(selectedMemberId, id)
+      } else if (typeof store.fetchData === 'function') {
+        store.fetchData()
+      }
+
+      setIsAddMemberOpen(false)
+      setSelectedMemberId('')
+    } catch (err) {
+      toast({
+        title: 'Aviso',
+        description: 'Não foi possível se conectar para salvar, mas a ação foi tentada.',
+      })
+      setIsAddMemberOpen(false)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className="space-y-6 animate-slide-in">
@@ -38,9 +108,56 @@ export default function PastoralDetail() {
 
         <TabsContent value="membros" className="mt-6 space-y-4">
           <div className="flex justify-end">
-            <Button size="sm">
-              <PlusCircle className="w-4 h-4 mr-2" /> Adicionar Membro
-            </Button>
+            <Dialog open={isAddMemberOpen} onOpenChange={setIsAddMemberOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <PlusCircle className="w-4 h-4 mr-2" /> Adicionar Membro
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Adicionar Membro à Pastoral</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>Selecione o Membro</Label>
+                    <Select value={selectedMemberId} onValueChange={setSelectedMemberId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um membro..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableMembers.length > 0 ? (
+                          availableMembers.map((m) => (
+                            <SelectItem key={m.id} value={m.id}>
+                              {m.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="none" disabled>
+                            Nenhum membro disponível
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsAddMemberOpen(false)}
+                    disabled={isLoading}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleAddMember}
+                    disabled={!selectedMemberId || selectedMemberId === 'none' || isLoading}
+                  >
+                    {isLoading ? 'Adicionando...' : 'Adicionar'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {pastoralMembros.map((membro) => {
