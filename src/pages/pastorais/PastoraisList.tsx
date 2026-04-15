@@ -1,21 +1,72 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Briefcase, Users, ChevronRight, Plus } from 'lucide-react'
+import { Briefcase, Users, ChevronRight, Plus, Loader2 } from 'lucide-react'
 import useDataStore from '@/stores/useDataStore'
 import { useAuth } from '@/hooks/use-auth'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { useState } from 'react'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { useToast } from '@/hooks/use-toast'
+import { supabase } from '@/lib/supabase/client'
 
 export default function PastoraisList() {
   const { pastorais, membros } = useDataStore()
   const { user } = useAuth()
+  const { toast } = useToast()
+
   const [search, setSearch] = useState('')
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newDescription, setNewDescription] = useState('')
 
   const filteredPastorais = pastorais.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase()),
   )
+
+  const handleCreatePastoral = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newName.trim()) return
+
+    setIsCreating(true)
+    try {
+      const { error } = await supabase
+        .from('pastorais')
+        .insert([{ name: newName, description: newDescription }])
+
+      if (error) throw error
+
+      toast({
+        title: 'Pastoral criada',
+        description: 'A pastoral foi criada com sucesso.',
+      })
+
+      setIsCreateModalOpen(false)
+      setNewName('')
+      setNewDescription('')
+      window.location.reload()
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao criar pastoral',
+        description: error.message,
+        variant: 'destructive',
+      })
+    } finally {
+      setIsCreating(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -25,9 +76,59 @@ export default function PastoraisList() {
           <p className="text-muted-foreground">Gerencie as equipes e seus respectivos cargos.</p>
         </div>
         {user?.role === 'ADMIN' && (
-          <Button className="shrink-0">
-            <Plus className="w-4 h-4 mr-2" /> Nova Pastoral
-          </Button>
+          <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+            <DialogTrigger asChild>
+              <Button className="shrink-0">
+                <Plus className="w-4 h-4 mr-2" /> Nova Pastoral
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <form onSubmit={handleCreatePastoral}>
+                <DialogHeader>
+                  <DialogTitle>Nova Pastoral</DialogTitle>
+                  <DialogDescription>
+                    Crie uma nova pastoral para gerenciar seus membros e escalas.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nome da Pastoral</Label>
+                    <Input
+                      id="name"
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      placeholder="Ex: Pastoral da Música"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Descrição</Label>
+                    <Textarea
+                      id="description"
+                      value={newDescription}
+                      onChange={(e) => setNewDescription(e.target.value)}
+                      placeholder="Descreva o propósito da pastoral..."
+                      rows={3}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsCreateModalOpen(false)}
+                    disabled={isCreating}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={isCreating || !newName.trim()}>
+                    {isCreating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    Criar Pastoral
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         )}
       </div>
 
@@ -40,8 +141,8 @@ export default function PastoraisList() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredPastorais.map((pastoral) => {
-          const totalMembros = membros.filter((m) => m.pastoralIds.includes(pastoral.id)).length
-          const isCoordenador = pastoral.coordenadoresIds.includes(user?.id || '')
+          const totalMembros = membros.filter((m) => m.pastoralIds?.includes(pastoral.id)).length
+          const isCoordenador = pastoral.coordenadoresIds?.includes(user?.id || '')
 
           return (
             <Link key={pastoral.id} to={`/pastorais/${pastoral.id}`}>
