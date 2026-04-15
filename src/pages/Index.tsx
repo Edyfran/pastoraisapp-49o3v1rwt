@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { format, isAfter, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Calendar, Users, Briefcase, Plus, ChevronRight, Activity } from 'lucide-react'
-import useAuthStore from '@/stores/useAuthStore'
+import { useAuth } from '@/hooks/use-auth'
 import useDataStore from '@/stores/useDataStore'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 
 export default function Index() {
-  const { user } = useAuthStore()
+  const { user } = useAuth()
   const { pastorais, membros, escalas } = useDataStore()
 
   const nextEscala = escalas
@@ -23,7 +23,7 @@ export default function Index() {
     <div className="space-y-6">
       <header className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-          Olá, {user?.name.split(' ')[0]} 👋
+          Olá, {user?.name?.split(' ')[0]} 👋
         </h1>
         <p className="text-muted-foreground mt-1 capitalize">
           {format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })}

@@ -28,7 +28,7 @@ export default function EscalaCreatorDialog({
   open: boolean
   onOpenChange: (v: boolean) => void
 }) {
-  const { pastorais, membros, addEscala } = useDataStore()
+  const { pastorais, addEscala } = useDataStore()
   const { toast } = useToast()
 
   const [pastoralId, setPastoralId] = useState('')
@@ -38,35 +38,39 @@ export default function EscalaCreatorDialog({
 
   const selectedPastoral = pastorais.find((p) => p.id === pastoralId)
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!pastoralId || !date) return
     setIsSubmitting(true)
 
-    // Simulate network delay
-    setTimeout(() => {
+    try {
       const dateTimeString = `${date}T${time}:00`
 
       const newEscala = {
-        id: `e-${Date.now()}`,
         date: formatISO(new Date(dateTimeString)),
         pastoralId,
         status: 'PENDENTE' as const,
-        assignments: selectedPastoral?.cargos.map((c) => ({ cargoId: c.id })) || [], // Init empty assignments
+        assignments: selectedPastoral?.cargos.map((c) => ({ cargoId: c.id })) || [],
       }
 
-      addEscala(newEscala)
-      setIsSubmitting(false)
-      onOpenChange(false)
+      await addEscala(newEscala)
 
       toast({
         title: 'Escala criada com sucesso!',
         description: 'Agora você pode atribuir os membros aos cargos.',
       })
 
-      // Reset form
       setPastoralId('')
       setDate('')
-    }, 800)
+      onOpenChange(false)
+    } catch (error) {
+      toast({
+        title: 'Erro ao criar escala',
+        description: 'Ocorreu um erro ao salvar.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (

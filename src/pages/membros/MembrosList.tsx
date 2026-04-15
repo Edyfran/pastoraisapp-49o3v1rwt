@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, Search, Filter } from 'lucide-react'
 import useDataStore from '@/stores/useDataStore'
-import useAuthStore from '@/stores/useAuthStore'
+import { useAuth } from '@/hooks/use-auth'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge'
 
 export default function MembrosList() {
   const { membros, pastorais } = useDataStore()
-  const { user } = useAuthStore()
+  const { user } = useAuth()
   const [search, setSearch] = useState('')
 
   const filteredMembros = membros.filter((m) => m.name.toLowerCase().includes(search.toLowerCase()))

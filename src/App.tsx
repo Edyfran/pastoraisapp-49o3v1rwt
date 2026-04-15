@@ -4,7 +4,7 @@ import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
 // Providers
-import { AuthProvider } from '@/stores/useAuthStore'
+import { AuthProvider, useAuth } from '@/hooks/use-auth'
 import { DataProvider } from '@/stores/useDataStore'
 
 // Components
@@ -21,6 +21,14 @@ import MembroDetail from './pages/membros/MembroDetail'
 import EscalasList from './pages/escalas/EscalasList'
 import Perfil from './pages/Perfil'
 
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth()
+  if (loading)
+    return <div className="min-h-screen flex items-center justify-center">Carregando...</div>
+  if (!user) return <Navigate to="/login" replace />
+  return <>{children}</>
+}
+
 const App = () => (
   <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
     <AuthProvider>
@@ -30,7 +38,13 @@ const App = () => (
           <Sonner />
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route element={<Layout />}>
+            <Route
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
               <Route path="/" element={<Index />} />
               <Route path="/pastorais" element={<PastoraisList />} />
               <Route path="/pastorais/:id" element={<PastoralDetail />} />

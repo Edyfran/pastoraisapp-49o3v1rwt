@@ -1,4 +1,4 @@
-import useAuthStore from '@/stores/useAuthStore'
+import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -6,7 +6,7 @@ import { LogOut, Settings, ShieldAlert, BellRing } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 
 export default function Perfil() {
-  const { user, logout } = useAuthStore()
+  const { user, signOut } = useAuth()
 
   if (!user) return null
 
@@ -91,7 +91,7 @@ export default function Perfil() {
         )}
       </div>
 
-      <Button variant="destructive" className="w-full mt-8" onClick={logout}>
+      <Button variant="destructive" className="w-full mt-8" onClick={signOut}>
         <LogOut className="w-4 h-4 mr-2" /> Sair do Sistema
       </Button>
     </div>

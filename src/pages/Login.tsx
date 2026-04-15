@@ -1,17 +1,39 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import useAuthStore from '@/stores/useAuthStore'
-import { MOCK_USERS } from '@/lib/mock-data'
+import { useAuth } from '@/hooks/use-auth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Shield } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Shield, Loader2 } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
 
 export default function Login() {
-  const { login } = useAuthStore()
+  const { signIn } = useAuth()
   const navigate = useNavigate()
+  const { toast } = useToast()
 
-  const handleLogin = (user: (typeof MOCK_USERS)[0]) => {
-    login(user)
-    navigate('/')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('Skip@Pass')
+  const [loading, setLoading] = useState(false)
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email || !password) return
+
+    setLoading(true)
+    const { error } = await signIn(email, password)
+    setLoading(false)
+
+    if (error) {
+      toast({
+        title: 'Erro no login',
+        description: 'Verifique suas credenciais e tente novamente.',
+        variant: 'destructive',
+      })
+    } else {
+      navigate('/')
+    }
   }
 
   return (
@@ -23,23 +45,56 @@ export default function Login() {
           </div>
           <CardTitle className="text-2xl font-bold">ECCLESIA-SYNC</CardTitle>
           <CardDescription className="text-base">
-            Selecione um perfil para acessar o sistema
+            Entre com suas credenciais para acessar
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {MOCK_USERS.map((user) => (
-            <Button
-              key={user.id}
-              variant="outline"
-              className="w-full h-auto py-4 flex flex-col items-start gap-1 justify-start border-2 hover:border-primary hover:bg-primary/5 transition-all"
-              onClick={() => handleLogin(user)}
-            >
-              <span className="font-semibold text-base">{user.name}</span>
-              <span className="text-xs text-muted-foreground uppercase tracking-wider">
-                {user.role}
-              </span>
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="seu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Senha</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Entrar
             </Button>
-          ))}
+          </form>
+
+          <div className="mt-6 pt-6 border-t border-border">
+            <p className="text-sm text-center text-muted-foreground mb-3">Contas de teste:</p>
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEmail('edyfrann.2010@gmail.com')}
+              >
+                Preencher Admin
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setEmail('coord@exemplo.com')}>
+                Preencher Coordenador
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setEmail('membro@exemplo.com')}>
+                Preencher Membro
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Briefcase, Users, ChevronRight, Plus } from 'lucide-react'
 import useDataStore from '@/stores/useDataStore'
-import useAuthStore from '@/stores/useAuthStore'
+import { useAuth } from '@/hooks/use-auth'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -10,7 +10,7 @@ import { useState } from 'react'
 
 export default function PastoraisList() {
   const { pastorais, membros } = useDataStore()
-  const { user } = useAuthStore()
+  const { user } = useAuth()
   const [search, setSearch] = useState('')
 
   const filteredPastorais = pastorais.filter((p) =>

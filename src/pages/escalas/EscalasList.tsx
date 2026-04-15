@@ -3,7 +3,7 @@ import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Calendar as CalendarIcon, Plus, Share2, MoreVertical, AlertCircle } from 'lucide-react'
 import useDataStore from '@/stores/useDataStore'
-import useAuthStore from '@/stores/useAuthStore'
+import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -13,7 +13,7 @@ import { Calendar } from '@/components/ui/calendar'
 
 export default function EscalasList() {
   const { escalas, pastorais, membros } = useDataStore()
-  const { user } = useAuthStore()
+  const { user } = useAuth()
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [creatorOpen, setCreatorOpen] = useState(false)
 
