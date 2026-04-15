@@ -28,7 +28,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
 export default function PastoralDetail() {
   const { id } = useParams()
-  const { pastorais, membros } = useDataStore()
+  const store = useDataStore() as any
+  const { pastorais, membros } = store
   const { toast } = useToast()
 
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false)
@@ -66,7 +67,6 @@ export default function PastoralDetail() {
       })
 
       // Tenta atualizar o estado local se a store suportar
-      const store = useDataStore.getState ? (useDataStore as any).getState() : useDataStore()
       if (typeof store.addMembroToPastoral === 'function') {
         store.addMembroToPastoral(selectedMemberId, id)
       } else if (typeof store.fetchData === 'function') {
